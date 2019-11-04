@@ -1,2 +1,2 @@
 # kubernetes
-repositorio de prueba para clusters de kubernetes
+Repositorio de prueba para clusters de kubernetes
