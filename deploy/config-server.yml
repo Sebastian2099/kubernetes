@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: nebula-config-server
+  labels:
+    app: nebula-config-server
+spec:
+  ports:
+    - port: 5007
+      protocol: TCP
+      targetPort: 5006
+  selector:
+    app: nebula-config-server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nebula-config-server
+  labels:
+    app: nebula-config-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: nebula-config-server
+  template:
+    metadata:
+      labels:
+        app: nebula-config-server
+    spec:
+      containers:
+      - name: nebula-config-server
+        image: tsoftglobal/nebula:nebula-config-server
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.0.2"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5007
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

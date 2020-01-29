@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: ws-ansible-integration
+  labels:
+    app: ws-ansible-integration
+spec:
+  ports:
+    - port: 5500
+      protocol: TCP
+      targetPort: 5006
+  selector:
+    app: ws-ansible-integration
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-ansible-integration
+  labels:
+    app: ws-ansible-integration
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: ws-ansible-integration
+  template:
+    metadata:
+      labels:
+        app: ws-ansible-integration
+    spec:
+      containers:
+      - name: ws-ansible-integration
+        image: tsoftglobal/nebula:ws-ansible-integration
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.6.29"
+        - name: WAIT_HOSTS
+          value: "nebula-config-server:5007"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5500
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

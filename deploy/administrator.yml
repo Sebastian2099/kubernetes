@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: ws-nebula-administrator
+  labels:
+    app: ws-nebula-administrator
+spec:
+  ports:
+    - port: 5001
+      protocol: TCP
+      targetPort: 5006
+  selector:
+    app: ws-nebula-administrator
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-nebula-administrator
+  labels:
+    app: ws-nebula-administrator
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: ws-nebula-administrator
+  template:
+    metadata:
+      labels:
+        app: ws-nebula-administrator
+    spec:
+      containers:
+      - name: ws-nebula-administrator
+        image: tsoftglobal/nebula:ws-nebula-administrator
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.3.20"
+        - name: WAIT_HOSTS
+          value: "mysqldb:3306,nebula-config-server:5007"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5001
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

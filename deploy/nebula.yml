@@ -1,0 +1,278 @@
+- version: "3.7"
+  services:
+    registry:
+      image: registry:2
+      ports:
+        - "4000:5000"
+      volumes:
+        - "registry:/var/lib/registry"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        placement:
+          constraints:
+            - "node.role == manager"
+            
+    mysqldb:
+      image: "tsoftglobal/nebula:mysqldb"
+      environment:
+        - "MYSQL_ROOT_PASSWORD=ts*admin1"
+        - "MYSQL_USER=nebula"
+        - "MYSQL_PASSWORD=ts*nebula1"
+      ports:
+        - "3306:3306"
+      volumes:
+        - "mysql:/var/lib/mysql"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        placement:
+          constraints:
+            - "node.role == manager"
+
+    mongodb:
+      image: mongo:latest
+      environment:
+        MONGO_INITDB_ROOT_USERNAME: root
+        MONGO_INITDB_ROOT_PASSWORD: ts*admin2
+      ports:
+        - "27017:27017"
+      volumes:
+        - "mongo:/etc/mongo"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        placement:
+          constraints:
+            - "node.role == manager"
+    adminer:
+      image: "adminer:latest"
+      ports:
+        - "8080:8080"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+
+    proxy-nginx:
+      image: "tsoftglobal/nebula:proxy-nginx"
+      ports:
+        - "80:80"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','PROXY_NGINX_VERSION') }}"
+        - "WAIT_HOSTS=ws-nebula-gateway:5006"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    nebula-config-server:
+      image: "tsoftglobal/nebula:nebula-config-server"
+      ports:
+        - "5007:5007"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','NEBULA_CONFIG_SERVER_VERSION') }}"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+            
+    ws-nebula-administrator:
+      image: "tsoftglobal/nebula:ws-nebula-administrator"
+      ports:
+        - "5001:5001"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_NEBULA_ADMINISTRATOR_VERSION') }}"
+        - "WAIT_HOSTS=mysqldb:3306,nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-nebula-core:
+      image: "tsoftglobal/nebula:ws-nebula-core"
+      ports:
+        - "5000:5000"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_NEBULA_CORE_VERSION') }}"
+        - "WAIT_HOSTS=mysqldb:3306,nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-nebula-gateway:
+      image: "tsoftglobal/nebula:ws-nebula-gateway"
+      ports:
+        - "5006:5006"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_NEBULA_GATEWAY_VERSION') }}"
+        - "WAIT_HOSTS=nebula-config-server:5007,ws-nebula-administrator:5001,ws-nebula-notification:5003,ws-nebula-core:5000,ws-nebula-security:5005,ws-ansible-integration:5500,ws-azure-integration:5503,ws-opencloud-integration:5501"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-nebula-notification:
+      image: "tsoftglobal/nebula:ws-nebula-notification"
+      ports:
+        - "5003:5003"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_NEBULA_NOTIFICATION_VERSION') }}"
+        - "WAIT_HOSTS=mongodb:27017,nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-nebula-security:
+      image: "tsoftglobal/nebula:ws-nebula-security"
+      ports:
+        - "5005:5005"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_NEBULA_SECURITY_VERSION') }}"
+        - "WAIT_HOSTS=mysqldb:3306,nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-ansible-integration:
+      image: "tsoftglobal/nebula:ws-ansible-integration"
+      ports:
+        - "5500:5500"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_ANSIBLE_INTEGRATION_VERSION') }}"
+        - "WAIT_HOSTS=nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+
+    ws-azure-integration:
+      image: "tsoftglobal/nebula:ws-azure-integration"
+      ports:
+        - "5503:5503"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_AZURE_INTEGRATION_VERSION') }}"
+        - "WAIT_HOSTS=nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+
+    ws-opencloud-integration:
+      image: "tsoftglobal/nebula:ws-opencloud-integration"
+      ports:
+        - "5501:5501"
+      volumes:
+        - "logs:/usr/src/logs"
+      environment:
+        - "ENVIROMENT={{ lookup('env','ENVIROMENT') }}"
+        - "PROJECT_VERSION={{ lookup('env','WS_OPENCLOUD_INTEGRATION_VERSION') }}"
+        - "WAIT_HOSTS=nebula-config-server:5007"
+        - "WAIT_HOSTS_TIMEOUT=300"
+        - "WAIT_SLEEP_INTERVAL=5"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+        resources:
+          limits:
+            cpus: "1"
+            memory: "2048M"
+    postfix:
+      image: "tsoftglobal/nebula:postfix"
+      ports:
+        - "25:25"
+      environment:
+        - "maildomain=devopsok.com"
+        - "smtp_user=nebula:ts*admin"
+        - "network=173.1.0.0/23"
+      networks:
+        - "network"
+      deploy:
+        replicas: 1
+  networks:
+    network:
+  volumes:
+    mysql:
+    mongo:
+    logs:
+    registry:

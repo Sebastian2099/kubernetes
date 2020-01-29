@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: ws-nebula-gateway
+  labels:
+    app: ws-nebula-gateway
+spec:
+  ports:
+    - port: 5006
+      protocol: TCP
+      targetPort: 80
+  selector:
+    app: ws-nebula-gateway
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-nebula-gateway
+  labels:
+    app: ws-nebula-gateway
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: ws-nebula-gateway
+  template:
+    metadata:
+      labels:
+        app: ws-nebula-gateway
+    spec:
+      containers:
+      - name: ws-nebula-gateway
+        image: tsoftglobal/nebula:ws-nebula-gateway
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.2.29"
+        - name: WAIT_HOSTS
+          value: "nebula-config-server:5007,ws-nebula-administrator:5001,ws-nebula-notification:5003,ws-nebula-core:5000,ws-nebula-security:5005,ws-ansible-integration:5500,ws-azure-integration:5503,ws-opencloud-integration:5501"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5006
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: mysqldb
+  labels:
+    app: mysqldb
+spec:
+  ports:
+    - port: 3306
+      protocol: TCP
+  selector:
+    app: mysqldb
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysqldb
+  labels:
+    app: mysqldb
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: mysqldb
+  template:
+    metadata:
+      labels:
+        app: mysqldb
+    spec:
+      containers:
+      - name: mysqldb
+        image: tsoftglobal/nebula:mysqldb
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: "ts*admin1"
+        - name: MYSQL_USER
+          value: "nebula"
+        - name: MYSQL_PASSWORD
+          value: "ts*nebula1"
+        volumeMounts:
+        - name: mysql
+          mountPath: /var/lib/mysql
+        ports: 
+        - containerPort: 3306
+      volumes:
+      - name: mysql

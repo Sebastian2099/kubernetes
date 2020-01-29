@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: proxy-nginx
+  labels:
+    app: proxy-nginx
+spec:
+  ports:
+    - port: 80
+      protocol: TCP
+      targetPort: loadbalancer
+  selector:
+    app: proxy-nginx
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: proxy-nginx
+  labels:
+    app: proxy-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: proxy-nginx
+  template:
+    metadata:
+      labels:
+        app: proxy-nginx
+    spec:
+      containers:
+      - name: proxy-nginx
+        image: tsoftglobal/nebula:proxy-nginx
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.5.21"
+        - name: WAIT_HOSTS
+          value: "ws-nebula-gateway:5006"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 80
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

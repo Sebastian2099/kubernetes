@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: ws-nebula-core
+  labels:
+    app: ws-nebula-core
+spec:
+  ports:
+    - port: 5000
+      protocol: TCP
+      targetPort: 5006
+  selector:
+    app: ws-nebula-core
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-nebula-core
+  labels:
+    app: ws-nebula-core
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: ws-nebula-core
+  template:
+    metadata:
+      labels:
+        app: ws-nebula-core
+    spec:
+      containers:
+      - name: ws-nebula-core
+        image: tsoftglobal/nebula:ws-nebula-core
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.1.27"
+        - name: WAIT_HOSTS
+          value: "mysqldb:3306,nebula-config-server:5007"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5000
+        resources: 
+          limits:
+            cpu: "1"
+            memory: "2048Mi"
+      volumes:
+      - name: logs

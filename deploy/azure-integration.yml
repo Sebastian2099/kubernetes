@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Service
+metadata:
+  name: ws-azure-integration
+  labels:
+    app: ws-azure-integration
+spec:
+  ports:
+    - port: 5503
+      protocol: TCP
+      targetPort: 5006
+  selector:
+    app: ws-azure-integration
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ws-azure-integration
+  labels:
+    app: ws-azure-integration
+spec:
+  replicas: 1
+  selector:
+    matchLabels: 
+      app: ws-azure-integration
+  template:
+    metadata:
+      labels:
+        app: ws-azure-integration
+    spec:
+      containers:
+      - name: ws-azure-integration
+        image: tsoftglobal/nebula:ws-azure-integration
+        env:
+        - name: ENVIROMENT
+          value: "desa"
+        - name: PROJECT_VERSION
+          value: "0.2.9"
+        - name: WAIT_HOSTS
+          value: "nebula-config-server:5007"
+        - name: WAIT_HOSTS_TIMEOUT
+          value: "300"
+        - name: WAIT_SLEEP_INTERVAL
+          value: "5"
+        volumeMounts:
+        - name: logs
+          mountPath: /usr/src/logs
+        ports: 
+        - containerPort: 5503
+        # resources: 
+        #   limits:
+        #     cpu: "1"
+        #     memory: "2048Mi"
+      volumes:
+      - name: logs
