@@ -1,0 +1,21 @@
+#vars: adminUsername, adminPassword*
+- name: Creando un cluster
+  hosts: localhost
+  become: true
+  tasks:
+    - name: gcp cluster
+      gcp_container_cluster:
+        name: test
+        initial_node_count: 2
+        master_auth:
+          username: "{{adminUsername}}"
+          password: "{{adminPassword}}"
+        node_config:
+          machine_type: n1-standard-1
+          disk_size_gb: 30
+          metadata: '{"name":"test","platform":"Ansible"}'
+        location: southamerica-east1-a
+        project: nebula-260416
+        auth_kind: serviceaccount
+        service_account_file: nebula-5cc1a00f957c.json
+        state: present
